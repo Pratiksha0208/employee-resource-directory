@@ -29,6 +29,7 @@ employee-resource-directory/
 
 ## Bonus Features
 
+
 ### Pagination
 
 Employee records are paginated to improve usability when the directory contains a large number of employees.
