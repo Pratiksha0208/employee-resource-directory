@@ -1,11 +1,36 @@
     const db = require("../../db");
 
-// GET /api/employees
+// GET 
 const getEmployees = async (req, res, next) => {
   try {
     const { search, department } = req.query;
 
-    let query = `
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit) || 5, 1);
+    const offset = (page - 1) * limit;
+
+    let whereQuery = " WHERE 1 = 1";
+    const values = [];
+
+    if (search) {
+      whereQuery += " AND e.name LIKE ?";
+      values.push(`%${search}%`);
+    }
+
+    if (department) {
+      whereQuery += " AND e.department = ?";
+      values.push(department);
+    }
+
+    const [countRows] = await db.query(
+      `SELECT COUNT(*) AS total FROM employees e${whereQuery}`,
+      values
+    );
+
+    const total = countRows[0].total;
+
+    const [employees] = await db.query(
+      `
       SELECT
         e.id,
         e.name,
@@ -18,32 +43,28 @@ const getEmployees = async (req, res, next) => {
         e.created_at
       FROM employees e
       LEFT JOIN employees m ON e.manager_id = m.id
-      WHERE 1 = 1
-    `;
+      ${whereQuery}
+      ORDER BY e.id ASC
+      LIMIT ? OFFSET ?
+      `,
+      [...values, limit, offset]
+    );
 
-    const values = [];
-
-    if (search) {
-      query += " AND e.name LIKE ?";
-      values.push(`%${search}%`);
-    }
-
-    if (department) {
-      query += " AND e.department = ?";
-      values.push(department);
-    }
-
-    query += " ORDER BY e.id ASC";
-
-    const [employees] = await db.query(query, values);
-
-    res.status(200).json(employees);
+    res.status(200).json({
+      employees,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     next(error);
   }
 };
 
-// GET /api/employees/:id
+// GET 
 const getEmployeeById = async (req, res, next) => {
   try {
     const [employees] = await db.query(
@@ -77,7 +98,7 @@ const getEmployeeById = async (req, res, next) => {
   }
 };
 
-// POST /api/employees
+// POST 
 const createEmployee = async (req, res, next) => {
   try {
     const {
@@ -147,7 +168,7 @@ const createEmployee = async (req, res, next) => {
   }
 };
 
-// PUT /api/employees/:id
+// PUT 
 const updateEmployee = async (req, res, next) => {
   try {
     const employeeId = req.params.id;
@@ -242,7 +263,7 @@ const updateEmployee = async (req, res, next) => {
   }
 };
 
-// DELETE /api/employees/:id
+// DELETE 
 const deleteEmployee = async (req, res, next) => {
   try {
     const employeeId = req.params.id;

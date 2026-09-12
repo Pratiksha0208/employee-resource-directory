@@ -11,6 +11,9 @@ import "./App.css";
 
 function App() {
   const [employees, setEmployees] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -28,21 +31,24 @@ function App() {
       const data = await getEmployees({
         search,
         department,
+        page: currentPage,
+        limit: 5,
       });
 
-      setEmployees(data);
+      setEmployees(data.employees);
+      setTotalPages(data.pagination.totalPages);
     } catch {
       setError("Failed to load employees.");
     } finally {
       setLoading(false);
     }
-  }, [search, department]);
+  }, [search, department, currentPage]);
 
   useEffect(() => {
-    // Fetch employees whenever the search or department filter changes.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadEmployees();
-  }, [loadEmployees]);
+  // Fetch employees whenever the search, department, or page changes.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  loadEmployees();
+}, [loadEmployees]);
 
   const handleSubmit = async (data) => {
     try {
@@ -128,12 +134,18 @@ function App() {
           type="text"
           placeholder="Search by employee name..."
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setCurrentPage(1);
+          }}
         />
 
         <select
           value={department}
-          onChange={(event) => setDepartment(event.target.value)}
+          onChange={(event) => {
+            setDepartment(event.target.value);
+            setCurrentPage(1);
+          }}
         >
           <option value="">All Departments</option>
 
@@ -163,11 +175,39 @@ function App() {
           Loading employees...
         </div>
       ) : (
-        <EmployeeTable
-          employees={employees}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        <>
+          <EmployeeTable
+            employees={employees}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+
+          <div className="pagination">
+            <button
+              className="secondary-button"
+              onClick={() =>
+                setCurrentPage((page) => page - 1)
+              }
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              className="secondary-button"
+              onClick={() =>
+                setCurrentPage((page) => page + 1)
+              }
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
