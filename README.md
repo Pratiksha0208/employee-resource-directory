@@ -26,3 +26,19 @@ employee-resource-directory/
 ├── database/
 │   └── schema.sql
 └── README.md
+
+## Bonus Features
+
+### Pagination
+
+Employee records are paginated to improve usability when the directory contains a large number of employees.
+
+- Displays 5 employees per page
+- Previous and Next navigation
+- Shows the current page and total number of pages
+- Pagination works together with name search and department filtering
+
+Example API request:
+
+```text
+GET /api/employees?page=1&limit=5
